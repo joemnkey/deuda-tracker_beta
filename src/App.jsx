@@ -31,6 +31,8 @@ function App() {
   const [incomes, setIncomes] = useState({})
   const [expenses, setExpenses] = useState(initialExpenses)
   const [changedExpenseFields, setChangedExpenseFields] = useState({})
+  const [isDirty, setIsDirty] = useState(false)
+  const [saveError, setSaveError] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('mi-presupuesto-v1')
@@ -42,15 +44,15 @@ function App() {
     } catch { /* Ignore invalid local data. */ }
   }, [])
 
-  useEffect(() => {
-    localStorage.setItem('mi-presupuesto-v1', JSON.stringify({ incomes, expenses }))
-  }, [incomes, expenses])
-
   const income = incomes[month] || { first: '', second: '' }
-  const updateIncome = (period, value) => setIncomes((all) => ({
-    ...all,
-    [month]: { ...income, [period]: value },
-  }))
+  const updateIncome = (period, value) => {
+    setIncomes((all) => ({
+      ...all,
+      [month]: { ...(all[month] || { first: '', second: '' }), [period]: value },
+    }))
+    setIsDirty(true)
+    setSaveError(false)
+  }
 
   const current = useMemo(() => expenses.map((item, index) => ({
     ...item,
@@ -74,9 +76,19 @@ function App() {
   const updateExpense = (id, field, value) => {
     const changeKey = `${id}:${field === 'name' ? 'name' : `${month}:${field}`}`
     setChangedExpenseFields((fields) => ({ ...fields, [changeKey]: true }))
+    setIsDirty(true)
+    setSaveError(false)
 
     if (field === 'amount') {
-      const cleanValue = value === '' ? '' : value.replace(/^0+(?=\d)/, '')
+      const normalizedValue = value.replace(',', '.').replace(/[^\d.]/g, '')
+      const [integerPart = '', ...decimalParts] = normalizedValue.split('.')
+      const cleanInteger = integerPart.replace(/^0+(?=\d)/, '')
+      const cleanDecimal = decimalParts.join('').replace(/\./g, '')
+      const cleanValue = value === ''
+        ? ''
+        : decimalParts.length
+          ? `${cleanInteger || '0'}.${cleanDecimal}`
+          : cleanInteger
       setExpenses((items) => items.map((item) => item.id === id
         ? { ...item, amounts: { ...item.amounts, [month]: cleanValue } }
         : item))
@@ -97,21 +109,43 @@ function App() {
       amounts: Object.fromEntries(MONTHS.map((m) => [m, ''])),
       periods: Object.fromEntries(MONTHS.map((m) => [m, 'first'])),
     }])
+    setIsDirty(true)
+    setSaveError(false)
   }
 
-  const removeExpense = (id) => setExpenses((items) => items.filter((item) => item.id !== id))
+  const removeExpense = (id) => {
+    setExpenses((items) => items.filter((item) => item.id !== id))
+    setIsDirty(true)
+    setSaveError(false)
+  }
+
+  const saveChanges = () => {
+    try {
+      localStorage.setItem('mi-presupuesto-v1', JSON.stringify({ incomes, expenses }))
+      setIsDirty(false)
+      setSaveError(false)
+    } catch {
+      setSaveError(true)
+    }
+  }
 
   return (
     <main className="app-shell">
       <header className="topbar">
         <div className="brand"><span className="brand-mark">$</span><span>Mi presupuesto</span></div>
-        <div className="month-picker">
-          <span>Mes</span>
-          <select value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Seleccionar mes">
-            {MONTHS.map((item) => <option key={item}>{item}</option>)}
-          </select>
+        <div className="header-actions">
+          <div className="month-picker">
+            <span>Mes</span>
+            <select value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Seleccionar mes">
+              {MONTHS.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </div>
+          <button className={`save-button ${isDirty ? 'pending' : ''}`} onClick={saveChanges}>
+            {isDirty ? 'Guardar cambios' : 'Guardado'}
+          </button>
         </div>
       </header>
+      {saveError && <p className="save-error" role="alert">No se pudieron guardar los cambios. Inténtalo de nuevo.</p>}
 
       <section className="hero">
         <div><p className="eyebrow">RESUMEN DE {month.toUpperCase()}</p><h1>Tu dinero, con claridad.</h1><p className="hero-copy">Organiza tus gastos, decide qué pagar en cada quincena y mantén tu balance bajo control.</p></div>
@@ -135,7 +169,7 @@ function App() {
             <div className="expense-head"><span>Concepto</span><span>Monto</span><span>Quincena de pago</span><span></span></div>
             {current.map((item) => <div className="expense-row" key={item.id}>
               <label className="expense-name"><span className="color-dot" style={{ backgroundColor: item.color }}></span><input className={changedExpenseFields[`${item.id}:name`] ? 'expense-field-changed' : ''} value={item.name} aria-label="Nombre del gasto" onChange={(e) => updateExpense(item.id, 'name', e.target.value)} /></label>
-              <label className={`amount-input ${changedExpenseFields[`${item.id}:${month}:amount`] ? 'expense-field-changed' : ''}`}><span>$</span><input inputMode="decimal" type="number" min="0" placeholder="0.00" value={item.amounts[month]} aria-label={`Monto para ${item.name}`} onChange={(e) => updateExpense(item.id, 'amount', e.target.value)} /></label>
+              <label className={`amount-input ${changedExpenseFields[`${item.id}:${month}:amount`] ? 'expense-field-changed' : ''}`}><span>$</span><input inputMode="decimal" type="text" value={item.amounts[month]} aria-label={`Monto para ${item.name}`} onChange={(e) => updateExpense(item.id, 'amount', e.target.value)} /></label>
               <select className={changedExpenseFields[`${item.id}:${month}:period`] ? 'expense-field-changed' : ''} value={item.period} onChange={(e) => updateExpense(item.id, 'period', e.target.value)} aria-label={`Quincena para ${item.name}`}><option value="first">1 al 15</option><option value="second">16 al 30</option></select>
               <button className="remove" onClick={() => removeExpense(item.id)} aria-label={`Eliminar ${item.name}`}>×</button>
             </div>)}

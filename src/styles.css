@@ -7,6 +7,10 @@ button, input, select { font: inherit; }
 button { cursor: pointer; }
 .app-shell { max-width: 1160px; margin: 0 auto; padding: 0 28px 56px; }
 .topbar { height: 80px; display: flex; justify-content: space-between; align-items: center; }
+.header-actions { display: flex; align-items: center; gap: 16px; }
+.save-button { border: 1px solid #d9e0eb; border-radius: 7px; padding: 9px 12px; background: #fff; color: #60708a; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.save-button.pending { border-color: #16794a; background: #16794a; color: #fff; }
+.save-error { margin: 0; color: #b42318; font-size: 13px; text-align: right; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -.3px; }
 .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: #5b5ce2; color: #fff; font-family: Georgia, serif; font-size: 20px; }
 .month-picker { display: flex; gap: 10px; align-items: center; color: #60708a; font-size: 14px; }.month-picker select { border: 1px solid #d9e0eb; background: #fff; color: #26344d; border-radius: 8px; padding: 9px 30px 9px 12px; font-weight: 600; }
@@ -19,4 +23,4 @@ button { cursor: pointer; }
 .expense-field-changed { color: #16794a !important; background-color: #eef9f1 !important; border-color: #83c99c !important; }
 .amount-input.expense-field-changed input { color: #16794a; background: transparent; }
 .expense-name input.expense-field-changed { border-radius: 4px; }
-@media (max-width: 760px) { .app-shell { padding: 0 16px 34px; }.topbar { height: 67px; }.hero { padding: 29px 24px; display: block; }.income-box { margin-top: 24px; }.income-grid { grid-template-columns: 1fr; }.income-grid .section-title { grid-row: 1; }.expense-head { display: none; }.expense-row { grid-template-columns: 1fr 32px; gap: 9px; padding: 14px; }.expense-name { grid-column: 1; }.amount-input { grid-column: 1; }.expense-row select { grid-column: 1; }.remove { grid-column: 2; grid-row: 1; }.summary-grid { grid-template-columns: 1fr; }.chart-layout { grid-template-columns: 1fr; gap: 32px; padding: 25px; }.chart-total { text-align: left; }.section-title { align-items: flex-start; }.section-title h2 { font-size: 23px; } }
+@media (max-width: 760px) { .app-shell { padding: 0 16px 34px; }.topbar { height: auto; min-height: 67px; flex-wrap: wrap; gap: 10px; padding: 10px 0; }.header-actions { width: 100%; justify-content: space-between; gap: 8px; }.save-button { padding: 8px 10px; font-size: 12px; }.save-error { text-align: left; }.hero { padding: 29px 24px; display: block; }.income-box { margin-top: 24px; }.income-grid { grid-template-columns: 1fr; }.income-grid .section-title { grid-row: 1; }.expense-head { display: none; }.expense-row { grid-template-columns: 1fr 32px; gap: 9px; padding: 14px; }.expense-name { grid-column: 1; }.amount-input { grid-column: 1; }.expense-row select { grid-column: 1; }.remove { grid-column: 2; grid-row: 1; }.summary-grid { grid-template-columns: 1fr; }.chart-layout { grid-template-columns: 1fr; gap: 32px; padding: 25px; }.chart-total { text-align: left; }.section-title { align-items: flex-start; }.section-title h2 { font-size: 23px; } }
