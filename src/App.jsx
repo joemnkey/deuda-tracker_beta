@@ -30,6 +30,7 @@ function App() {
   const [month, setMonth] = useState(MONTHS[new Date().getMonth()])
   const [incomes, setIncomes] = useState({})
   const [expenses, setExpenses] = useState(initialExpenses)
+  const [changedExpenseFields, setChangedExpenseFields] = useState({})
 
   useEffect(() => {
     const stored = localStorage.getItem('mi-presupuesto-v1')
@@ -71,10 +72,20 @@ function App() {
   }, [income, current])
 
   const updateExpense = (id, field, value) => {
+    const changeKey = `${id}:${field === 'name' ? 'name' : `${month}:${field}`}`
+    setChangedExpenseFields((fields) => ({ ...fields, [changeKey]: true }))
+
+    if (field === 'amount') {
+      const cleanValue = value === '' ? '' : value.replace(/^0+(?=\d)/, '')
+      setExpenses((items) => items.map((item) => item.id === id
+        ? { ...item, amounts: { ...item.amounts, [month]: cleanValue } }
+        : item))
+      return
+    }
+
     setExpenses((items) => items.map((item) => {
       if (item.id !== id) return item
       if (field === 'name') return { ...item, name: value }
-      if (field === 'amount') return { ...item, amounts: { ...item.amounts, [month]: value } }
       return { ...item, periods: { ...item.periods, [month]: value } }
     }))
   }
@@ -115,7 +126,7 @@ function App() {
         <section className="income-grid">
           <div className="section-title"><div><p className="eyebrow">INGRESOS</p><h2>¿Cuánto cobras?</h2></div><span className="muted">Registra lo que recibes por quincena</span></div>
           <label className="input-card"><span>Primera quincena <small>1 al 15</small></span><div className="currency-input"><i>$</i><input inputMode="decimal" type="number" min="0" placeholder="0.00" value={income.first} onChange={(e) => updateIncome('first', e.target.value)}/></div></label>
-          <label className="input-card"><span>Segunda quincena <small>16 al 30</small></span><div className="currency-input"><i>$</i><input inputMode="decimal" type="number" min="0" placeholder="0.00" value={income.second} onChange={(e) => updateIncome('second', e.target.value)}/></div></label>
+          <label className="input-card"><span>Segunda quincena <small>16 al 30</small></span><div className="currency-input"><i>$</i><input inputMode="decimal" type="number" min="" placeholder="0.00" value={income.second} onChange={(e) => updateIncome('second', e.target.value)}/></div></label>
         </section>
 
         <section className="expenses-section">
@@ -123,9 +134,9 @@ function App() {
           <div className="expense-list">
             <div className="expense-head"><span>Concepto</span><span>Monto</span><span>Quincena de pago</span><span></span></div>
             {current.map((item) => <div className="expense-row" key={item.id}>
-              <label className="expense-name"><span className="color-dot" style={{ backgroundColor: item.color }}></span><input value={item.name} aria-label="Nombre del gasto" onChange={(e) => updateExpense(item.id, 'name', e.target.value)} /></label>
-              <label className="amount-input"><span>$</span><input inputMode="decimal" type="number" min="0" placeholder="0.00" value={item.amounts[month]} aria-label={`Monto para ${item.name}`} onChange={(e) => updateExpense(item.id, 'amount', e.target.value)} /></label>
-              <select value={item.period} onChange={(e) => updateExpense(item.id, 'period', e.target.value)} aria-label={`Quincena para ${item.name}`}><option value="first">1 al 15</option><option value="second">16 al 30</option></select>
+              <label className="expense-name"><span className="color-dot" style={{ backgroundColor: item.color }}></span><input className={changedExpenseFields[`${item.id}:name`] ? 'expense-field-changed' : ''} value={item.name} aria-label="Nombre del gasto" onChange={(e) => updateExpense(item.id, 'name', e.target.value)} /></label>
+              <label className={`amount-input ${changedExpenseFields[`${item.id}:${month}:amount`] ? 'expense-field-changed' : ''}`}><span>$</span><input inputMode="decimal" type="number" min="0" placeholder="0.00" value={item.amounts[month]} aria-label={`Monto para ${item.name}`} onChange={(e) => updateExpense(item.id, 'amount', e.target.value)} /></label>
+              <select className={changedExpenseFields[`${item.id}:${month}:period`] ? 'expense-field-changed' : ''} value={item.period} onChange={(e) => updateExpense(item.id, 'period', e.target.value)} aria-label={`Quincena para ${item.name}`}><option value="first">1 al 15</option><option value="second">16 al 30</option></select>
               <button className="remove" onClick={() => removeExpense(item.id)} aria-label={`Eliminar ${item.name}`}>×</button>
             </div>)}
           </div>
